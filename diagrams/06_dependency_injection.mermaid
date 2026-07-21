@@ -1,0 +1,32 @@
+flowchart LR
+    subgraph Request["HTTP Request"]
+        EP["GET /foods/1"]
+    end
+
+    subgraph DI["FastAPI Dependency Injection\nDepends(get_db)"]
+        GDB["get_db()\n1. Database().get_connection()\n2. yield conn\n3. finally: conn.close()"]
+    end
+
+    subgraph Handler["Route Handler"]
+        FN["get_food(\n  food_id: int,\n  conn = Depends(get_db)\n)"]
+    end
+
+    subgraph Model["Model Layer"]
+        FM["Food(conn)\nfood.display()"]
+    end
+
+    subgraph DB["MySQL"]
+        MY[("food_recipe_db")]
+    end
+
+    EP --> FN
+    FN -->|"FastAPI inject อัตโนมัติ"| GDB
+    GDB -->|"conn"| FN
+    FN -->|"ส่ง conn ต่อ"| FM
+    FM -->|"cursor.execute(SQL)"| MY
+    MY -->|"rows"| FM
+    FM -->|"dict"| FN
+    FN -->|"JSONResponse"| EP
+
+    style GDB fill:#1e3a5f,color:#93c5fd,stroke:#3b82f6
+    style FN fill:#065f46,color:#6ee7b7,stroke:#10b981

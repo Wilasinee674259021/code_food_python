@@ -1,0 +1,31 @@
+flowchart TD
+    subgraph PHP["🐘 PHP (code_food/)"]
+        direction TB
+        PHP_EP["endpoints/foods.php\nCORS + require_once"]
+        PHP_C["controllers/FoodController.php\nswitch(method) + manual validation"]
+        PHP_M["models/Food.php\nPDO prepared statements"]
+        PHP_R["helpers/Response.php\nstatic json() methods"]
+        PHP_DB["config/database.php\nnew PDO(dsn)"]
+
+        PHP_EP --> PHP_C --> PHP_M --> PHP_DB
+        PHP_C --> PHP_R
+    end
+
+    subgraph PY["🐍 Python (code_food_python/)"]
+        direction TB
+        PY_MAIN["main.py\nFastAPI + CORSMiddleware"]
+        PY_R["routers/foods.py\n@router.get/post/put/delete"]
+        PY_S["schemas/food_schema.py\nPydantic BaseModel"]
+        PY_M["models/food.py\nPyMySQL cursor"]
+        PY_DB["config/database.py\nget_db() Depends"]
+
+        PY_MAIN --> PY_R --> PY_M --> PY_DB
+        PY_R --> PY_S
+    end
+
+    PHP_EP -.->|"เทียบเท่า"| PY_MAIN
+    PHP_C -.->|"เทียบเท่า"| PY_R
+    PHP_M -.->|"เทียบเท่า"| PY_M
+    PHP_R -.->|"built-in ใน FastAPI"| PY_R
+    PHP_DB -.->|"เทียบเท่า"| PY_DB
+    PHP_C -.->|"แทนที่ด้วย"| PY_S

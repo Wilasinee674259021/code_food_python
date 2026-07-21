@@ -1,0 +1,29 @@
+sequenceDiagram
+    autonumber
+    actor C as Client
+    participant UV as Uvicorn
+    participant R as foods.py router
+    participant F as Food model
+    participant DB as MySQL
+
+    C->>+UV: DELETE /foods/2
+    UV->>+R: delete_food(food_id=2, conn=Depends(get_db))
+
+    R->>+F: Food(conn), food.id=2
+    R->>F: food.exists()
+    F->>+DB: SELECT id FROM foods WHERE id=2
+    DB-->>-F: row / None
+
+    alt ไม่พบ
+        F-->>R: False
+        R-->>C: 404 {success:false, error}
+    else พบ
+        F-->>-R: True
+        R->>+F: food.delete()
+        F->>+DB: DELETE FROM foods WHERE id=2
+        Note over DB: ON DELETE CASCADE\nลบ recipes.food_id=2 ด้วย
+        DB-->>-F: rowcount=1
+        F-->>-R: True
+        R-->>-UV: {success:true, data:{id:2,...}}
+        UV-->>-C: 200 OK
+    end

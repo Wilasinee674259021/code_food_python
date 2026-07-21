@@ -1,0 +1,30 @@
+sequenceDiagram
+    autonumber
+    actor C as Client
+    participant UV as Uvicorn
+    participant R as foods.py router
+    participant P as Pydantic Schema
+    participant F as Food model
+    participant DB as MySQL
+
+    C->>+UV: POST /foods\n{"nameTh":"ข้าวผัด","category":"อาหารไทย"}
+    UV->>+R: create_food(body, conn=Depends(get_db))
+
+    R->>+P: FoodCreate(**body)
+    alt Validation fails
+        P-->>R: ValidationError
+        R-->>C: 422 {success:false, error}
+    else Valid
+        P-->>-R: FoodCreate instance
+
+        R->>+F: Food(conn)
+        R->>F: food.init(nameTh, category)
+        R->>F: food.create()
+        F->>F: _validate()
+        F->>+DB: INSERT INTO foods (nameTh, category) VALUES (%s, %s)
+        DB-->>-F: lastrowid = 4
+        F-->>-R: return 4
+
+        R-->>-UV: {success:true, data:{id:4,...}}
+        UV-->>-C: 201 Created
+    end

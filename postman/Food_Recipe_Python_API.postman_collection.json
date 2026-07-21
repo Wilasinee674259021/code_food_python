@@ -1,0 +1,488 @@
+{
+  "info": {
+    "name": "Food Recipe API — Python (FastAPI)",
+    "description": "Postman Collection สำหรับ Food & Recipe Management API\nสร้างด้วย FastAPI + PyMySQL\n\nBase URL: {{base_url}}\nSwagger UI: http://localhost:8000/docs\n\n⚠️ ความแตกต่างจาก PHP version:\n- GET/DELETE by ID ใช้ Path Param: /foods/{id}  ไม่ใช่ ?id=\n- GET Recipes ใช้ Query Param: /recipes?food_id= หรือ /recipes?id=\n\nลำดับทดสอบที่แนะนำ:\n1. Health Check\n2. Create Food  → auto-set {{food_id}}\n3. Add Recipe   → auto-set {{recipe_id}}\n4. Get Food by ID (ดู recipeList)\n5. Update Recipe\n6. Update Food\n7. Delete Recipe\n8. Delete Food",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string",
+      "description": "FastAPI server — uvicorn main:app --reload"
+    },
+    {
+      "key": "food_id",
+      "value": "1",
+      "type": "string",
+      "description": "set อัตโนมัติหลัง Create Food"
+    },
+    {
+      "key": "recipe_id",
+      "value": "1",
+      "type": "string",
+      "description": "set อัตโนมัติหลัง Add Recipe"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/", "host": ["{{base_url}}"], "path": [""] },
+            "description": "ตรวจสอบว่า FastAPI server ทำงานอยู่"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Server is running\", () => {",
+                "    pm.response.to.have.status(200);",
+                "    pm.expect(pm.response.json()).to.have.property('message');",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Foods",
+      "description": "CRUD — Base: {{base_url}}/foods",
+      "item": [
+        {
+          "name": "Get All Foods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/foods", "host": ["{{base_url}}"], "path": ["foods"] },
+            "description": "ดึง Food ทั้งหมด"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                "pm.test(\"data is array\", () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                "pm.test(\"fields present\", () => {",
+                "    const foods = pm.response.json().data;",
+                "    if (foods.length > 0) {",
+                "        pm.expect(foods[0]).to.include.all.keys('id','nameTh','category','created_at','updated_at');",
+                "    }",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Get Food by ID (with recipeList)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/foods/{{food_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["foods", "{{food_id}}"]
+            },
+            "description": "ดึง Food พร้อม recipeList (display)\n⚠️ Path Param: /foods/{id}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                "pm.test(\"Has recipeList\", () => {",
+                "    const data = pm.response.json().data;",
+                "    pm.expect(data).to.have.property('recipeList');",
+                "    pm.expect(data.recipeList).to.be.an('array');",
+                "});",
+                "pm.test(\"All fields present\", () => {",
+                "    const data = pm.response.json().data;",
+                "    pm.expect(data).to.include.all.keys('id','nameTh','category','created_at','updated_at','recipeList');",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Get Food — Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/foods/99999", "host": ["{{base_url}}"], "path": ["foods","99999"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Create Food",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nameTh\": \"ข้าวผัด\",\n  \"category\": \"อาหารไทย\"\n}" },
+            "url": { "raw": "{{base_url}}/foods", "host": ["{{base_url}}"], "path": ["foods"] },
+            "description": "สร้าง Food ใหม่ — Pydantic validate อัตโนมัติ"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                "pm.test(\"Returns new id\", () => {",
+                "    const data = pm.response.json().data;",
+                "    pm.expect(data.id).to.be.a('number').and.greaterThan(0);",
+                "    pm.collectionVariables.set('food_id', data.id);",
+                "    console.log('food_id =', data.id);",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Create Food — Empty Fields (422)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nameTh\": \"\",\n  \"category\": \"\"\n}" },
+            "url": { "raw": "{{base_url}}/foods", "host": ["{{base_url}}"], "path": ["foods"] },
+            "description": "ทดสอบ Pydantic: min_length=1 → 422"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 422\", () => pm.response.to.have.status(422));",
+                "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Create Food — Missing Field (422)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nameTh\": \"ข้าวผัด\"\n}" },
+            "url": { "raw": "{{base_url}}/foods", "host": ["{{base_url}}"], "path": ["foods"] },
+            "description": "ทดสอบ: ขาด field category — Pydantic required → 422"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 422\", () => pm.response.to.have.status(422));",
+                "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Update Food",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"id\": {{food_id}},\n  \"nameTh\": \"ข้าวผัดกุ้ง\",\n  \"category\": \"อาหารไทย\"\n}" },
+            "url": { "raw": "{{base_url}}/foods", "host": ["{{base_url}}"], "path": ["foods"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Update Food — Not Found (404)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"id\": 99999,\n  \"nameTh\": \"ทดสอบ\",\n  \"category\": \"ทดสอบ\"\n}" },
+            "url": { "raw": "{{base_url}}/foods", "host": ["{{base_url}}"], "path": ["foods"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Delete Food",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/foods/{{food_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["foods", "{{food_id}}"]
+            },
+            "description": "ลบ Food + CASCADE Recipes\n⚠️ Path Param: /foods/{id}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Recipes",
+      "description": "CRUD — Base: {{base_url}}/recipes",
+      "item": [
+        {
+          "name": "Get Recipes by Food ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/recipes?food_id={{food_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["recipes"],
+              "query": [{ "key": "food_id", "value": "{{food_id}}" }]
+            },
+            "description": "ดึง Recipes ทั้งหมดของ Food — Query Param ?food_id="
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                "pm.test(\"data is array\", () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                "pm.test(\"fields present\", () => {",
+                "    const recipes = pm.response.json().data;",
+                "    if (recipes.length > 0) {",
+                "        pm.expect(recipes[0]).to.include.all.keys('id','food_id','recipeName','quantity','unitName');",
+                "        pm.expect(recipes[0].quantity).to.be.a('number');",
+                "    }",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Get Recipe by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/recipes?id={{recipe_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["recipes"],
+              "query": [{ "key": "id", "value": "{{recipe_id}}" }]
+            },
+            "description": "ดึง Recipe เดี่ยว — Query Param ?id="
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                "pm.test(\"quantity is number\", () => pm.expect(pm.response.json().data.quantity).to.be.a('number'));"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Get Recipe — Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/recipes?id=99999",
+              "host": ["{{base_url}}"],
+              "path": ["recipes"],
+              "query": [{ "key": "id", "value": "99999" }]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Get Recipes — No Params (422)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/recipes", "host": ["{{base_url}}"], "path": ["recipes"] },
+            "description": "ทดสอบ: ไม่ส่ง ?food_id หรือ ?id → 422"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 422\", () => pm.response.to.have.status(422));",
+                "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Add Recipe to Food",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"food_id\": {{food_id}},\n  \"recipeName\": \"กระเทียม\",\n  \"quantity\": 5,\n  \"unitName\": \"กลีบ\"\n}" },
+            "url": { "raw": "{{base_url}}/recipes", "host": ["{{base_url}}"], "path": ["recipes"] },
+            "description": "เพิ่ม Recipe — food_exists() ตรวจก่อน INSERT\nPydantic: food_id>0, quantity>0"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                "pm.test(\"Returns new id\", () => {",
+                "    const data = pm.response.json().data;",
+                "    pm.expect(data.id).to.be.a('number').and.greaterThan(0);",
+                "    pm.collectionVariables.set('recipe_id', data.id);",
+                "    console.log('recipe_id =', data.id);",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Add Recipe — food_id Not Found (404)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"food_id\": 99999,\n  \"recipeName\": \"ทดสอบ\",\n  \"quantity\": 1,\n  \"unitName\": \"ชิ้น\"\n}" },
+            "url": { "raw": "{{base_url}}/recipes", "host": ["{{base_url}}"], "path": ["recipes"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Add Recipe — quantity <= 0 (422)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"food_id\": {{food_id}},\n  \"recipeName\": \"ทดสอบ\",\n  \"quantity\": -5,\n  \"unitName\": \"กรัม\"\n}" },
+            "url": { "raw": "{{base_url}}/recipes", "host": ["{{base_url}}"], "path": ["recipes"] },
+            "description": "ทดสอบ Pydantic: Field(gt=0) → 422"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 422\", () => pm.response.to.have.status(422));",
+                "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Update Recipe",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"id\": {{recipe_id}},\n  \"recipeName\": \"กระเทียมสับ\",\n  \"quantity\": 8,\n  \"unitName\": \"กลีบ\"\n}" },
+            "url": { "raw": "{{base_url}}/recipes", "host": ["{{base_url}}"], "path": ["recipes"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Delete Recipe",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/recipes/{{recipe_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["recipes", "{{recipe_id}}"]
+            },
+            "description": "ลบ Recipe — Path Param: /recipes/{id}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Delete Recipe — Not Found (404)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/recipes/99999", "host": ["{{base_url}}"], "path": ["recipes","99999"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    }
+  ]
+}

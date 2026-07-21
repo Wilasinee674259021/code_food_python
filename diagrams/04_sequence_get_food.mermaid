@@ -1,0 +1,27 @@
+sequenceDiagram
+    autonumber
+    actor C as Client
+    participant UV as Uvicorn
+    participant R as foods.py router
+    participant F as Food model
+    participant DB as MySQL
+
+    C->>+UV: GET /foods/1
+    UV->>+R: get_food(food_id=1, conn=Depends(get_db))
+
+    R->>+F: Food(conn), food.id=1
+    R->>F: food.display()
+
+    F->>+DB: SELECT f.*, r.*\nFROM foods f\nLEFT JOIN recipes r ON f.id=r.food_id\nWHERE f.id=1
+    DB-->>-F: rows list
+
+    F->>F: build dict + loop recipeList
+
+    alt rows ว่าง
+        F-->>R: None
+        R-->>C: 404 {success:false, error}
+    else มีข้อมูล
+        F-->>-R: {id, nameTh, category, recipeList:[...]}
+        R-->>-UV: {success:true, data:{...}}
+        UV-->>-C: 200 OK
+    end

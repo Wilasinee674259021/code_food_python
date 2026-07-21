@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Food Recipe API (Python + PostgreSQL) — SE Diagrams</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; }
+    header {
+      background: linear-gradient(135deg, #14532d 0%, #0f172a 100%);
+      border-bottom: 2px solid #166534; padding: 24px 40px;
+    }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #4ade80; }
+    header p  { color: #86efac; margin-top: 5px; font-size: 0.88rem; }
+    .stack-badge { display: inline-flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .stack-badge span { background:#052e16; border:1px solid #166534; color:#86efac; padding:3px 10px; border-radius:99px; font-size:0.75rem; font-weight:600; }
+    .stack-badge span.pg { background:#0c1445; border-color:#2563eb; color:#93c5fd; }
+    nav { display:flex; gap:8px; padding:14px 40px; background:#1e293b; border-bottom:1px solid #334155; flex-wrap:wrap; }
+    nav button { padding:7px 16px; border-radius:20px; border:1px solid #334155; background:#0f172a; color:#94a3b8; cursor:pointer; font-size:0.8rem; transition:all .2s; }
+    nav button:hover  { background:#14532d; color:#86efac; border-color:#16a34a; }
+    nav button.active { background:#15803d; color:#fff; border-color:#22c55e; }
+    main { padding:28px 40px; }
+    .section { display:none; animation:fadeIn .3s ease; }
+    .section.visible { display:block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+    .section-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+    .badge { background:#15803d; color:#bbf7d0; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:99px; text-transform:uppercase; }
+    .badge-pg { background:#1d4ed8; color:#bfdbfe; }
+    .section-header h2 { font-size:1.15rem; color:#f1f5f9; }
+    .section-header p  { font-size:0.82rem; color:#64748b; margin-top:2px; }
+    .desc-box { background:#1e293b; border:1px solid #334155; border-left:4px solid #22c55e; border-radius:8px; padding:14px 18px; margin-bottom:20px; font-size:0.88rem; color:#cbd5e1; line-height:1.65; }
+    .desc-box.pg { border-left-color:#3b82f6; }
+    .desc-box strong { color:#86efac; }
+    .desc-box strong.pg { color:#93c5fd; }
+    .desc-box code { background:#0f172a; color:#4ade80; padding:1px 6px; border-radius:4px; font-size:0.82rem; }
+    .desc-box code.pg { color:#93c5fd; }
+    .diagram-card { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:28px 20px; overflow-x:auto; margin-bottom:18px; }
+    .diagram-render { display:flex; justify-content:center; min-height:120px; align-items:center; }
+    .cmp-table { width:100%; border-collapse:collapse; font-size:0.84rem; margin-top:18px; }
+    .cmp-table th { padding:10px 14px; border-bottom:2px solid #334155; text-align:left; }
+    .cmp-table th.my  { background:#1e293b; color:#fbbf24; }
+    .cmp-table th.pg  { background:#0c1445; color:#93c5fd; }
+    .cmp-table th.note { background:#0f172a; color:#64748b; }
+    .cmp-table td { padding:9px 14px; border-bottom:1px solid #1e293b; color:#cbd5e1; vertical-align:top; }
+    .cmp-table tr:hover td { background:#1e293b; }
+    .cmp-table code { background:#0f172a; padding:1px 5px; border-radius:3px; font-size:0.8rem; }
+    .cmp-table code.my { color:#fbbf24; }
+    .cmp-table code.pg { color:#93c5fd; }
+    .api-table { width:100%; border-collapse:collapse; font-size:0.84rem; margin-top:18px; }
+    .api-table th { background:#0f172a; color:#22c55e; padding:10px 14px; text-align:left; border-bottom:2px solid #334155; }
+    .api-table td { padding:9px 14px; border-bottom:1px solid #1e293b; color:#cbd5e1; }
+    .api-table tr:hover td { background:#1e293b; }
+    .method { font-weight:700; font-family:monospace; padding:2px 8px; border-radius:4px; font-size:0.78rem; }
+    .get    { background:#065f46; color:#6ee7b7; }
+    .post   { background:#1e3a8a; color:#93c5fd; }
+    .put    { background:#713f12; color:#fde68a; }
+    .delete { background:#7f1d1d; color:#fca5a5; }
+    .status { font-family:monospace; font-weight:600; }
+    .s200{color:#6ee7b7;} .s201{color:#93c5fd;} .s404{color:#fde68a;} .s422{color:#fca5a5;}
+    .legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+    .legend-item { display:flex; align-items:center; gap:8px; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:6px 12px; font-size:0.78rem; color:#94a3b8; }
+    .legend-dot { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+    .highlight-pg { background:#0c1445; border:1px solid #2563eb; border-radius:6px; padding:10px 14px; margin-top:14px; font-size:0.84rem; color:#93c5fd; }
+    .highlight-pg strong { color:#60a5fa; }
+    .err-msg { color:#f87171; font-size:0.85rem; padding:12px; text-align:center; }
+    footer { text-align:center; padding:20px; color:#475569; font-size:0.78rem; border-top:1px solid #1e293b; margin-top:32px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>&#x1F40D; Food Recipe API (Python + PostgreSQL) &mdash; SE Diagrams</h1>
+  <p>FastAPI + psycopg2 + Pydantic &middot; Food &amp; Recipe Management System &middot; สำหรับนักศึกษา SE</p>
+  <div class="stack-badge">
+    <span>FastAPI</span><span class="pg">psycopg2</span><span>Pydantic v2</span>
+    <span>Uvicorn ASGI</span><span>python-dotenv</span><span class="pg">PostgreSQL</span>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="show('arch',this)">&#x1F3D7; Architecture</button>
+  <button onclick="show('class',this)">&#x1F4D0; Class Diagram</button>
+  <button onclick="show('seq1',this)">&#x2795; POST Create Food</button>
+  <button onclick="show('seq2',this)">&#x1F50D; GET Food by ID</button>
+  <button onclick="show('seq3',this)">&#x1F5D1; DELETE Food</button>
+  <button onclick="show('di',this)">&#x26A1; Dependency Injection</button>
+  <button onclick="show('pgdiff',this)">&#x1F418; MySQL vs PostgreSQL</button>
+  <button onclick="show('api',this)">&#x1F4E1; API Reference</button>
+</nav>
+
+<main>
+
+<!-- ======================== ARCHITECTURE ======================== -->
+<div class="section visible" id="sec-arch">
+  <div class="section-header">
+    <span class="badge">Diagram 1</span>
+    <div><h2>&#x1F3D7; Architecture Overview</h2>
+    <p>การไหลของ request จาก Client ถึง PostgreSQL</p></div>
+  </div>
+  <div class="desc-box">
+    ระบบแบ่งเป็น 5 ชั้น: <strong>Uvicorn</strong> (ASGI server) รับ request &rarr; <strong>main.py</strong> จัดการ CORS + Exception &rarr; <strong>routers/</strong> ทำ routing ผ่าน decorator &rarr; <strong>schemas/</strong> validate ด้วย Pydantic &rarr; <strong>models/</strong> รัน SQL ผ่าน <strong class="pg">psycopg2</strong> &middot; DB connection inject อัตโนมัติด้วย <code>Depends(get_db)</code>
+  </div>
+  <div class="diagram-card"><div id="render-arch" class="diagram-render"><span style="color:#64748b">กำลัง render...</span></div></div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>main.py — entry, CORS, exceptions</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>routers/ — HTTP decorators</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>schemas/ — Pydantic validation</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>models/ — SQL via psycopg2</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2563eb"></div>PostgreSQL — SERIAL, RETURNING id, Trigger</div>
+  </div>
+</div>
+
+<!-- ======================== CLASS ======================== -->
+<div class="section" id="sec-class">
+  <div class="section-header">
+    <span class="badge">Diagram 2</span>
+    <div><h2>&#x1F4D0; Class Diagram</h2>
+    <p>UML Class Diagram — Python classes, Pydantic schemas, dependencies</p></div>
+  </div>
+  <div class="desc-box">
+    <strong>Food / Recipe</strong> รับ <code>psycopg2 connection</code> ผ่าน constructor &middot;
+    <code>create()</code> ใช้ <strong class="pg">RETURNING id</strong> &middot;
+    <strong>FoodCreate / FoodUpdate</strong> คือ Pydantic BaseModel validate อัตโนมัติ &middot;
+    <strong>Database</strong> อ่านจาก <code>.env</code> รวม <code>DB_PORT=5432</code>
+  </div>
+  <div class="diagram-card"><div id="render-class" class="diagram-render"><span style="color:#64748b">กำลัง render...</span></div></div>
+</div>
+
+<!-- ======================== SEQ 1: POST ======================== -->
+<div class="section" id="sec-seq1">
+  <div class="section-header">
+    <span class="badge">Diagram 3</span>
+    <div><h2>&#x2795; Sequence: POST /foods</h2>
+    <p>Create Food — Pydantic validate &rarr; INSERT RETURNING id</p></div>
+  </div>
+  <div class="desc-box">
+    Pydantic validate body <em>ก่อน</em> route handler ทำงาน &mdash; ถ้า field ผิด FastAPI ตอบ <strong>422</strong> ทันที &middot;
+    Food model ใช้ <code class="pg">INSERT ... RETURNING id</code> แล้ว <code>cursor.fetchone()["id"]</code> แทน <code>cursor.lastrowid</code>
+  </div>
+  <div class="diagram-card"><div id="render-seq1" class="diagram-render"><span style="color:#64748b">กำลัง render...</span></div></div>
+  <div class="highlight-pg">
+    <strong>PostgreSQL:</strong> ไม่มี <code>cursor.lastrowid</code> ใน psycopg2 &mdash; ใช้ <code class="pg">INSERT ... RETURNING id</code> + <code class="pg">fetchone()["id"]</code>
+  </div>
+</div>
+
+<!-- ======================== SEQ 2: GET ======================== -->
+<div class="section" id="sec-seq2">
+  <div class="section-header">
+    <span class="badge">Diagram 4</span>
+    <div><h2>&#x1F50D; Sequence: GET /foods/{id}</h2>
+    <p>Food with recipeList — LEFT JOIN + Python loop</p></div>
+  </div>
+  <div class="desc-box">
+    <strong>display()</strong> ใช้ <code>LEFT JOIN</code> ดึง Food + Recipes ในคำสั่ง SQL เดียว &rarr;
+    Python วน loop ประกอบ <code>recipeList[]</code> &middot;
+    PostgreSQL คืน column ตาม alias ใน SELECT ผ่าน <code>RealDictRow</code>
+  </div>
+  <div class="diagram-card"><div id="render-seq2" class="diagram-render"><span style="color:#64748b">กำลัง render...</span></div></div>
+</div>
+
+<!-- ======================== SEQ 3: DELETE ======================== -->
+<div class="section" id="sec-seq3">
+  <div class="section-header">
+    <span class="badge">Diagram 5</span>
+    <div><h2>&#x1F5D1; Sequence: DELETE /foods/{id}</h2>
+    <p>ลบ Food + ON DELETE CASCADE</p></div>
+  </div>
+  <div class="desc-box">
+    Router ตรวจ <code>exists()</code> ก่อน &mdash; ถ้าไม่มีตอบ 404 &middot;
+    <strong class="pg">PostgreSQL FOREIGN KEY ON DELETE CASCADE</strong> ลบ recipes ทั้งหมดอัตโนมัติระดับ DB
+  </div>
+  <div class="diagram-card"><div id="render-seq3" class="diagram-render"><span style="color:#64748b">กำลัง render...</span></div></div>
+  <div class="highlight-pg">
+    <strong>PostgreSQL CASCADE:</strong> กำหนดใน DDL — <code class="pg">FOREIGN KEY (food_id) REFERENCES foods(id) ON DELETE CASCADE</code>
+  </div>
+</div>
+
+<!-- ======================== DEPENDENCY INJECTION ======================== -->
+<div class="section" id="sec-di">
+  <div class="section-header">
+    <span class="badge">Diagram 6</span>
+    <div><h2>&#x26A1; Dependency Injection</h2>
+    <p>Depends(get_db) — FastAPI inject psycopg2 connection อัตโนมัติ</p></div>
+  </div>
+  <div class="desc-box">
+    <strong>Dependency Injection</strong> คือการที่ FastAPI สร้าง/จัดการ dependency ให้อัตโนมัติ &middot;
+    <code>get_db()</code> เป็น <strong>Generator function</strong> ที่ <code>yield</code> connection แล้ว <code>finally: conn.close()</code> &mdash; รับประกันว่า connection ปิดทุกครั้งแม้เกิด error
+  </div>
+  <div class="diagram-card"><div id="render-di" class="diagram-render"><span style="color:#64748b">กำลัง render...</span></div></div>
+  <div class="highlight-pg">
+    <strong>psycopg2 difference:</strong>
+    PyMySQL ตั้ง autocommit ใน connect &mdash; psycopg2 ต้องตั้งหลัง connect: <code class="pg">conn.autocommit = True</code>
+  </div>
+</div>
+
+<!-- ======================== MYSQL vs POSTGRESQL ======================== -->
+<div class="section" id="sec-pgdiff">
+  <div class="section-header">
+    <span class="badge badge-pg">Diagram 7</span>
+    <div><h2>&#x1F418; MySQL vs PostgreSQL</h2>
+    <p>เปรียบเทียบ driver, syntax, schema ทุก layer</p></div>
+  </div>
+  <div class="desc-box pg">
+    การเปลี่ยนจาก MySQL ไป PostgreSQL ต้องเปลี่ยน <strong class="pg">driver</strong>, <strong class="pg">SQL syntax</strong> และ <strong class="pg">schema DDL</strong>
+  </div>
+  <div class="diagram-card"><div id="render-pgdiff" class="diagram-render"><span style="color:#64748b">กำลัง render...</span></div></div>
+  <table class="cmp-table" style="margin-top:18px">
+    <thead>
+      <tr><th class="note">หัวข้อ</th><th class="my">MySQL / PyMySQL</th><th class="pg">PostgreSQL / psycopg2</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Library</td><td><code class="my">pymysql</code></td><td><code class="pg">psycopg2-binary</code></td></tr>
+      <tr><td>connect param</td><td><code class="my">database="..."</code></td><td><code class="pg">dbname="..."</code></td></tr>
+      <tr><td>Port</td><td><code class="my">3306</code></td><td><code class="pg">5432</code></td></tr>
+      <tr><td>Default user</td><td><code class="my">root</code></td><td><code class="pg">postgres</code></td></tr>
+      <tr><td>Charset</td><td><code class="my">charset="utf8mb4"</code></td><td>UTF-8 เป็น default</td></tr>
+      <tr><td>Dict cursor</td><td><code class="my">DictCursor</code></td><td><code class="pg">RealDictCursor</code></td></tr>
+      <tr><td>autocommit</td><td><code class="my">autocommit=True</code> ใน connect</td><td><code class="pg">conn.autocommit = True</code> หลัง connect</td></tr>
+      <tr><td>Insert ID</td><td><code class="my">cursor.lastrowid</code></td><td><code class="pg">INSERT...RETURNING id</code></td></tr>
+      <tr><td>camelCase column</td><td>ใช้โดยตรง</td><td>ต้อง double-quote: <code class="pg">"nameTh"</code></td></tr>
+      <tr><td>Auto increment</td><td><code class="my">AUTO_INCREMENT</code></td><td><code class="pg">SERIAL</code></td></tr>
+      <tr><td>updated_at auto</td><td><code class="my">ON UPDATE CURRENT_TIMESTAMP</code></td><td>ต้องใช้ TRIGGER</td></tr>
+      <tr><td>Type annotation</td><td><code class="my">pymysql.connections.Connection</code></td><td><code class="pg">psycopg2.extensions.connection</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ======================== API REFERENCE ======================== -->
+<div class="section" id="sec-api">
+  <div class="section-header">
+    <span class="badge">Diagram 8</span>
+    <div><h2>&#x1F4E1; API Reference</h2>
+    <p>Base URL: <code style="color:#4ade80">http://localhost:8000</code> &middot; Swagger: <a href="http://localhost:8000/docs" style="color:#4ade80">/docs</a></p></div>
+  </div>
+  <div class="desc-box">
+    Start: <code>uvicorn main:app --reload</code> &middot;
+    Response format: <code>{"success": true/false, "data": {...}}</code>
+  </div>
+  <table class="api-table">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Body / Params</th><th>Status</th><th>คำอธิบาย</th></tr></thead>
+    <tbody>
+      <tr><td colspan="5" style="background:#052e16;color:#86efac;font-weight:700;padding:8px 14px">Foods</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/foods</code></td><td>—</td><td><span class="status s200">200</span></td><td>ดู Food ทั้งหมด</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/foods/{id}</code></td><td>Path param</td><td><span class="status s200">200</span> / <span class="status s404">404</span></td><td>ดู Food + recipeList</td></tr>
+      <tr><td><span class="method post">POST</span></td><td><code>/foods</code></td><td><code>{nameTh, category}</code></td><td><span class="status s201">201</span> / <span class="status s422">422</span></td><td>สร้าง Food — INSERT RETURNING id</td></tr>
+      <tr><td><span class="method put">PUT</span></td><td><code>/foods</code></td><td><code>{id, nameTh, category}</code></td><td><span class="status s200">200</span> / <span class="status s404">404</span></td><td>แก้ไข Food</td></tr>
+      <tr><td><span class="method delete">DELETE</span></td><td><code>/foods/{id}</code></td><td>Path param</td><td><span class="status s200">200</span> / <span class="status s404">404</span></td><td>ลบ Food + CASCADE recipes</td></tr>
+      <tr><td colspan="5" style="background:#0c1a3a;color:#93c5fd;font-weight:700;padding:8px 14px">Recipes</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/recipes?food_id=</code></td><td>Query param</td><td><span class="status s200">200</span></td><td>ดู Recipes ทั้งหมดของ Food</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code>/recipes?id=</code></td><td>Query param</td><td><span class="status s200">200</span> / <span class="status s404">404</span></td><td>ดู Recipe เดี่ยว</td></tr>
+      <tr><td><span class="method post">POST</span></td><td><code>/recipes</code></td><td><code>{food_id, recipeName, quantity, unitName}</code></td><td><span class="status s201">201</span> / <span class="status s404">404</span> / <span class="status s422">422</span></td><td>เพิ่ม Recipe</td></tr>
+      <tr><td><span class="method put">PUT</span></td><td><code>/recipes</code></td><td><code>{id, recipeName, quantity, unitName}</code></td><td><span class="status s200">200</span> / <span class="status s404">404</span></td><td>แก้ไข Recipe</td></tr>
+      <tr><td><span class="method delete">DELETE</span></td><td><code>/recipes/{id}</code></td><td>Path param</td><td><span class="status s200">200</span> / <span class="status s404">404</span></td><td>ลบ Recipe</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</main>
+<footer>Food Recipe API &mdash; FastAPI + psycopg2 + PostgreSQL &middot; SE Diagrams</footer>
+
+<script>
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#15803d', primaryTextColor: '#f1f5f9', primaryBorderColor: '#22c55e',
+    lineColor: '#4ade80', secondaryColor: '#1e293b', tertiaryColor: '#0f172a',
+    noteBkgColor: '#1e293b', noteTextColor: '#cbd5e1',
+    actorBkg: '#1e293b', actorBorder: '#22c55e', actorTextColor: '#f1f5f9',
+    signalColor: '#86efac', signalTextColor: '#f1f5f9',
+    activationBkgColor: '#14532d', activationBorderColor: '#22c55e',
+    sequenceNumberColor: '#f1f5f9',
+  },
+  flowchart: { curve: 'basis', htmlLabels: true },
+  sequence: { useMaxWidth: true, diagramMarginX: 20 },
+});
+
+// ── Diagram definitions (plain text, no special chars in labels) ──────────────
+
+const ARCH = `flowchart TD
+    Client([Client Browser Postman curl])
+    UV[Uvicorn ASGI Server]
+
+    subgraph APP[main.py FastAPI App]
+        CORS[CORSMiddleware]
+        EH[Exception Handlers]
+    end
+
+    subgraph RT[routers]
+        RF[foods.py router]
+        RR[recipes.py router]
+    end
+
+    subgraph SCH[schemas Pydantic Validation]
+        SF[FoodCreate FoodUpdate]
+        SR[RecipeCreate RecipeUpdate]
+    end
+
+    subgraph MDL[models Business Logic SQL]
+        MF[food.py]
+        MR[recipe.py]
+    end
+
+    subgraph CFG[config database.py]
+        DB[Database class get_db Generator]
+    end
+
+    PG[(PostgreSQL food_recipe_db)]
+
+    Client -->|HTTP Request| UV
+    UV --> CORS --> EH
+    EH --> RF & RR
+    RF -->|validate body| SF
+    RR -->|validate body| SR
+    RF & RR -->|Depends get_db| DB
+    DB -->|psycopg2 conn| MF & MR
+    RF --> MF
+    RR --> MR
+    MF & MR -->|SQL RETURNING id| PG
+    RF & RR -->|JSONResponse| Client`;
+
+const CLASS_DEF = `classDiagram
+    direction LR
+
+    class Database {
+        +str host
+        +int port
+        +str db_name
+        +str username
+        +str password
+        +get_connection() PgConnection
+    }
+
+    class Food {
+        +int id
+        +str name_th
+        +str category
+        +list recipe_list
+        +init(name, category) None
+        +display() dict
+        +add_recipe(recipe) int
+        +get_all() list
+        +create() int
+        +update() bool
+        +delete() bool
+        +exists() bool
+        -_validate() None
+        -_serialize(row) dict
+    }
+
+    class Recipe {
+        +int id
+        +int food_id
+        +str recipe_name
+        +float quantity
+        +str unit_name
+        +get_all_by_food_id() list
+        +get_one() dict
+        +create() int
+        +update() bool
+        +delete() bool
+        +food_exists() bool
+        -_validate() None
+        -_serialize(row) dict
+    }
+
+    class FoodCreate {
+        +str nameTh
+        +str category
+    }
+
+    class FoodUpdate {
+        +int id
+        +str nameTh
+        +str category
+    }
+
+    class RecipeCreate {
+        +int food_id
+        +str recipeName
+        +float quantity
+        +str unitName
+    }
+
+    class RecipeUpdate {
+        +int id
+        +str recipeName
+        +float quantity
+        +str unitName
+    }
+
+    class get_db {
+        Generator
+        yield PgConnection
+        finally close
+    }
+
+    Database --> get_db : provides
+    get_db --> Food : inject conn
+    get_db --> Recipe : inject conn
+    FoodCreate --> Food : validates create
+    FoodUpdate --> Food : validates update
+    RecipeCreate --> Recipe : validates create
+    RecipeUpdate --> Recipe : validates update
+    Food --> Recipe : has many`;
+
+const SEQ1 = `sequenceDiagram
+    autonumber
+    actor C as Client
+    participant UV as Uvicorn
+    participant R as foods router
+    participant P as Pydantic Schema
+    participant F as Food model
+    participant PG as PostgreSQL
+
+    C->>+UV: POST /foods
+    UV->>+R: create_food body conn
+
+    R->>+P: FoodCreate body
+    alt Validation fails
+        P-->>R: ValidationError
+        R-->>C: 422 success false
+    else Valid
+        P-->>-R: FoodCreate instance
+        R->>+F: Food conn init nameTh category
+        F->>+PG: INSERT INTO foods RETURNING id
+        PG-->>-F: id = 1
+        F-->>-R: new_id = fetchone id
+        R-->>-UV: 201 success true data id
+        UV-->>-C: HTTP 201 Created
+    end`;
+
+const SEQ2 = `sequenceDiagram
+    autonumber
+    actor C as Client
+    participant UV as Uvicorn
+    participant R as foods router
+    participant F as Food model
+    participant PG as PostgreSQL
+
+    C->>+UV: GET /foods/1
+    UV->>+R: get_food food_id=1
+
+    R->>+F: Food conn food id = 1
+    R->>F: food display
+    F->>+PG: SELECT foods LEFT JOIN recipes WHERE id=1
+    PG-->>-F: RealDictRow list
+
+    alt rows empty
+        F-->>R: None
+        R-->>C: 404 Food not found
+    else rows exist
+        F->>F: build recipeList from rows
+        F-->>-R: dict with recipeList
+        R-->>-UV: 200 success true data
+        UV-->>-C: HTTP 200 OK
+    end`;
+
+const SEQ3 = `sequenceDiagram
+    autonumber
+    actor C as Client
+    participant UV as Uvicorn
+    participant R as foods router
+    participant F as Food model
+    participant PG as PostgreSQL
+
+    C->>+UV: DELETE /foods/1
+    UV->>+R: delete_food food_id=1
+
+    R->>+F: Food conn food id = 1
+    R->>F: food exists
+    F->>+PG: SELECT id FROM foods WHERE id=1
+    PG-->>-F: row or None
+
+    alt not exists
+        F-->>R: False
+        R-->>C: 404 Food not found
+    else exists
+        F-->>R: True
+        R->>F: food delete
+        F->>+PG: DELETE FROM foods WHERE id=1
+        Note over PG: ON DELETE CASCADE removes recipes
+        PG-->>-F: rowcount 1
+        F-->>-R: True
+        R-->>-UV: 200 Food deleted successfully
+        UV-->>-C: HTTP 200 OK
+    end`;
+
+const DI = `flowchart TD
+    ENV[env file DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD]
+    DC[Database class reads from environment]
+    GD[get_db Generator\nstep1 get connection\nstep2 set autocommit True\nstep3 yield conn\nstep4 finally close conn]
+    DEP[Depends get_db\ninjected into router parameter]
+    RT[Router Function\ncreate update delete handlers]
+    MO[Model Layer Food Recipe]
+    PG[(PostgreSQL psycopg2 RealDictCursor)]
+    RESP[JSONResponse to Client]
+    CLOSE[conn closed\nevery request success or error]
+
+    ENV --> DC
+    DC --> GD
+    GD -->|yield conn| DEP
+    DEP -->|inject conn| RT
+    RT -->|pass conn to model| MO
+    MO -->|cursor execute SQL| PG
+    PG -->|RealDictRow| MO
+    MO --> RT
+    RT --> RESP
+    GD -->|finally block| CLOSE`;
+
+const PGDIFF = `flowchart LR
+    subgraph MY[MySQL PyMySQL]
+        direction TB
+        MA[pymysql connect\ndatabase param\ncharset utf8mb4\nDictCursor\nautocommit in connect]
+        MB[cursor lastrowid]
+        MC[AUTO INCREMENT]
+        MD[ON UPDATE CURRENT TIMESTAMP]
+        ME[DictCursor returns dict directly]
+    end
+
+    subgraph PG[PostgreSQL psycopg2]
+        direction TB
+        PA[psycopg2 connect\ndbname param\nRealDictCursor factory\nautocommit set after connect]
+        PB[INSERT RETURNING id\nfetchone to get id]
+        PC[SERIAL or GENERATED AS IDENTITY]
+        PD[TRIGGER fn update updated at]
+        PE[RealDictCursor returns RealDictRow\ndict row before modify]
+    end
+
+    MA -->|change to| PA
+    MB -->|change to| PB
+    MC -->|change to| PC
+    MD -->|change to| PD
+    ME -->|change to| PE`;
+
+// ── Render all diagrams with isolated try/catch ────────────────────────────────
+async function renderDiagram(id, code) {
+  const el = document.getElementById('render-' + id);
+  if (!el) return;
+  try {
+    const { svg } = await mermaid.render('svg-' + id, code);
+    el.innerHTML = svg;
+  } catch (e) {
+    el.innerHTML = '<p class="err-msg">Render error: ' + e.message + '</p>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderDiagram('arch',    ARCH);
+  renderDiagram('class',   CLASS_DEF);
+  renderDiagram('seq1',    SEQ1);
+  renderDiagram('seq2',    SEQ2);
+  renderDiagram('seq3',    SEQ3);
+  renderDiagram('di',      DI);
+  renderDiagram('pgdiff',  PGDIFF);
+});
+
+function show(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('visible');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

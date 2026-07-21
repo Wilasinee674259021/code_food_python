@@ -1,0 +1,47 @@
+flowchart TD
+    Client(["🌐 Client\nBrowser / Postman / curl"])
+    UV["⚡ Uvicorn\nASGI Server\n(uvicorn main:app)"]
+
+    subgraph main["main.py — FastAPI App"]
+        CORS["CORSMiddleware"]
+        EH["Exception Handlers\nRequestValidationError\nValueError / Exception"]
+    end
+
+    subgraph routers["routers/  —  แทน controllers/ + endpoints/"]
+        RF["foods.py\n@router.get/post/put/delete"]
+        RR["recipes.py\n@router.get/post/put/delete"]
+    end
+
+    subgraph schemas["schemas/  —  Pydantic Validation\n(ไม่มีใน PHP — ใหม่ใน Python)"]
+        SF["FoodCreate\nFoodUpdate"]
+        SR["RecipeCreate\nRecipeUpdate"]
+    end
+
+    subgraph models["models/  —  Business Logic + SQL"]
+        MF["food.py\ninit() · display() · add_recipe()\ncreate() · update() · delete()"]
+        MR["recipe.py\ncreate() · update() · delete()\nget_all_by_food_id() · food_exists()"]
+    end
+
+    subgraph config["config/database.py"]
+        DB["Database class\nget_db() — FastAPI Depends"]
+    end
+
+    MySQL[("🗄️ MySQL\nfood_recipe_db")]
+
+    Client -->|"HTTP Request"| UV
+    UV --> CORS
+    CORS --> EH
+    EH --> RF
+    EH --> RR
+    RF -->|"Pydantic auto-validate"| SF
+    RR -->|"Pydantic auto-validate"| SR
+    RF -->|"Depends(get_db)"| DB
+    RR -->|"Depends(get_db)"| DB
+    RF --> MF
+    RR --> MR
+    DB -->|"PyMySQL Connection"| MF
+    DB -->|"PyMySQL Connection"| MR
+    MF -->|"SQL cursor"| MySQL
+    MR -->|"SQL cursor"| MySQL
+    RF -->|"JSONResponse"| Client
+    RR -->|"JSONResponse"| Client
